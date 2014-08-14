@@ -25,24 +25,20 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.FrameLayout;
-
-import java.util.HashSet;
-
 import uk.co.senab.actionbarpulltorefresh.library.listeners.HeaderViewListener;
-import uk.co.senab.actionbarpulltorefresh.library.listeners.OnRefreshListener;
 import uk.co.senab.actionbarpulltorefresh.library.viewdelegates.ViewDelegate;
 
 /**
  * The main component of the library. You wrap the views you wish to be 'pullable' within this layout.
  * This layout is setup by using the {@link ActionBarPullToRefresh} setup-wizard return by
+ *
  * @link ActionBarPullToRefresh#from(android.app.Activity)}.
  */
 public class PullToRefreshLayout extends FrameLayout {
 
-    private static final boolean DEBUG = false;
-    private static final String LOG_TAG = "PullToRefreshLayout";
+    private static final boolean DEBUG   = false;
+    private static final String  LOG_TAG = "PullToRefreshLayout";
 
     private PullToRefreshAttacher mPullToRefreshAttacher;
 
@@ -62,8 +58,7 @@ public class PullToRefreshLayout extends FrameLayout {
      * Manually set this Attacher's refreshing state. The header will be
      * displayed or hidden as requested.
      *
-     * @param refreshing
-     *            - Whether the attacher should be in a refreshing state,
+     * @param refreshing - Whether the attacher should be in a refreshing state,
      */
     public final void setRefreshing(boolean refreshing) {
         ensureAttacher();
@@ -81,7 +76,7 @@ public class PullToRefreshLayout extends FrameLayout {
     /**
      * Call this when your refresh is complete and this view should reset itself
      * (header view will be hidden).
-     *
+     * <p/>
      * This is the equivalent of calling <code>setRefreshing(false)</code>.
      */
     public final void setRefreshComplete() {
@@ -102,7 +97,7 @@ public class PullToRefreshLayout extends FrameLayout {
 
     /**
      * @return The Header View which is displayed when the user is pulling, or
-     *         we are refreshing.
+     * we are refreshing.
      */
     public final View getHeaderView() {
         ensureAttacher();
@@ -145,14 +140,17 @@ public class PullToRefreshLayout extends FrameLayout {
         return new PullToRefreshLayout.LayoutParams(getContext(), attrs);
     }
 
-    @Override
-    protected void onDetachedFromWindow() {
-        // Destroy the PullToRefreshAttacher
-        if (mPullToRefreshAttacher != null) {
-            mPullToRefreshAttacher.destroy();
-        }
-        super.onDetachedFromWindow();
-    }
+    // 注掉：因为TAB切换是触发此函数导致下拉失效
+    //@Override
+    //protected void onDetachedFromWindow() {
+    //    // Destroy the PullToRefreshAttacher
+    //    if (DEBUG) Log.i(LOG_TAG, "onDetachedFromWindow ");
+    //    if (mPullToRefreshAttacher != null) {
+    //        mPullToRefreshAttacher.destroy();
+    //        if (DEBUG) Log.i(LOG_TAG, "onDetachedFromWindow mPullToRefreshAttacher destroy");
+    //    }
+    //    super.onDetachedFromWindow();
+    //}
 
     @Override
     protected void onConfigurationChanged(Configuration newConfig) {
@@ -219,7 +217,7 @@ public class PullToRefreshLayout extends FrameLayout {
     }
 
     protected PullToRefreshAttacher createPullToRefreshAttacher(Activity activity,
-            Options options) {
+                                                                Options options) {
         return new PullToRefreshAttacher(activity, options != null ? options : new Options());
     }
 

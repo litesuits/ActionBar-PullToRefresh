@@ -18,7 +18,7 @@
 <resources>
 
     <item type="id" name="ptr_content" />
-    <item type="id" name="ptr_text" />
+    <item type="id" name="mTsCenter" />
     <item type="id" name="ptr_progress" />
 
 </resources>

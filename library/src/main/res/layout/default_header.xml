@@ -22,11 +22,11 @@
     <FrameLayout
         android:id="@id/ptr_content"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
+        android:layout_height="55dp"
         android:background="?android:attr/colorBackground">
 
         <TextView
-            android:id="@id/ptr_text"
+            android:id="@+id/ptr_text"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:textAppearance="?android:attr/textAppearanceMedium"

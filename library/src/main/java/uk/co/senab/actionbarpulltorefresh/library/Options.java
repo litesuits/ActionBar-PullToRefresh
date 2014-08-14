@@ -16,6 +16,8 @@
 
 package uk.co.senab.actionbarpulltorefresh.library;
 
+import android.view.ViewGroup;
+
 /**
  * Allows you to specify a number of configuration options when setting up a {@link PullToRefreshLayout}.
  */
@@ -35,11 +37,12 @@ public final class Options {
     Options() {}
 
     EnvironmentDelegate environmentDelegate = null;
-    int headerLayout = DEFAULT_HEADER_LAYOUT;
-    HeaderTransformer headerTransformer = null;
-    float refreshScrollDistance = DEFAULT_REFRESH_SCROLL_DISTANCE;
-    boolean refreshOnUp = DEFAULT_REFRESH_ON_UP;
-    int refreshMinimizeDelay = DEFAULT_REFRESH_MINIMIZED_DELAY;
+    int                 headerLayout        = DEFAULT_HEADER_LAYOUT;
+    HeaderTransformer   headerTransformer   = null;
+    ViewGroup decorView;
+    float   refreshScrollDistance = DEFAULT_REFRESH_SCROLL_DISTANCE;
+    boolean refreshOnUp           = DEFAULT_REFRESH_ON_UP;
+    int     refreshMinimizeDelay  = DEFAULT_REFRESH_MINIMIZED_DELAY;
 
     /**
      * Enable or disable the header 'minimization', which by default means that the majority of
@@ -122,6 +125,11 @@ public final class Options {
         public Builder minimize(int delay) {
             mOptions.refreshMinimizeDelay = delay;
             mOptions.refreshMinimize = true;
+            return this;
+        }
+
+        public Builder setDecorView(ViewGroup decorView) {
+            mOptions.decorView = decorView;
             return this;
         }
 

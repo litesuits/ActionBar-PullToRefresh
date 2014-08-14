@@ -25,57 +25,47 @@ import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.os.Build;
 import android.util.Log;
-import android.view.Gravity;
-import android.view.LayoutInflater;
-import android.view.MotionEvent;
-import android.view.View;
-import android.view.ViewConfiguration;
-import android.view.ViewGroup;
-import android.view.WindowManager;
-
-import java.util.WeakHashMap;
-
+import android.view.*;
 import uk.co.senab.actionbarpulltorefresh.library.listeners.HeaderViewListener;
 import uk.co.senab.actionbarpulltorefresh.library.listeners.OnRefreshListener;
 import uk.co.senab.actionbarpulltorefresh.library.viewdelegates.ViewDelegate;
 
+import java.util.WeakHashMap;
+
 @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 public class PullToRefreshAttacher {
 
-    private static final boolean DEBUG = false;
-    private static final String LOG_TAG = "PullToRefreshAttacher";
+    private static final boolean DEBUG   = false;
+    private static final String  LOG_TAG = "PullToRefreshAttacher";
 
     /* Member Variables */
-
+    private final int                             mTouchSlop;
+    private final float                           mRefreshScrollDistance;
+    private final WeakHashMap<View, ViewDelegate> mRefreshableViews;
+    private final boolean                         mRefreshOnUp;
+    private final int                             mRefreshMinimizeDelay;
+    private final boolean                         mRefreshMinimize;
+    private final int[] mViewLocationResult = new int[2];
+    private final Rect  mRect               = new Rect();
+    private final AddHeaderViewRunnable mAddHeaderViewRunnable;
+    private final Runnable mRefreshMinimizeRunnable = new Runnable() {
+        @Override
+        public void run() {
+            minimizeHeader();
+        }
+    };
     private EnvironmentDelegate mEnvironmentDelegate;
-    private HeaderTransformer mHeaderTransformer;
-
-    private OnRefreshListener mOnRefreshListener;
-
-    private Activity mActivity;
-    private View mHeaderView;
-    private HeaderViewListener mHeaderViewListener;
-
-    private final int mTouchSlop;
-    private final float mRefreshScrollDistance;
-
-    private float mInitialMotionY, mLastMotionY, mPullBeginY;
-    private float mInitialMotionX;
+    private HeaderTransformer   mHeaderTransformer;
+    private OnRefreshListener   mOnRefreshListener;
+    private Activity            mActivity;
+    private View                mHeaderView;
+    private HeaderViewListener  mHeaderViewListener;
+    private float               mInitialMotionY, mLastMotionY, mPullBeginY;
+    private float   mInitialMotionX;
     private boolean mIsBeingDragged, mIsRefreshing, mHandlingTouchEventFromDown;
     private View mViewBeingDragged;
-
-    private final WeakHashMap<View, ViewDelegate> mRefreshableViews;
-
-    private final boolean mRefreshOnUp;
-    private final int mRefreshMinimizeDelay;
-    private final boolean mRefreshMinimize;
     private boolean mIsDestroyed = false;
-
-    private final int[] mViewLocationResult = new int[2];
-    private final Rect mRect = new Rect();
-
-    private final AddHeaderViewRunnable mAddHeaderViewRunnable;
-
+    private ViewGroup decorView;
     protected PullToRefreshAttacher(Activity activity, Options options) {
         if (activity == null) {
             throw new IllegalArgumentException("activity cannot be null");
@@ -108,7 +98,7 @@ public class PullToRefreshAttacher {
         mTouchSlop = ViewConfiguration.get(activity).getScaledTouchSlop();
 
         // Get Window Decor View
-        final ViewGroup decorView = (ViewGroup) activity.getWindow().getDecorView();
+        decorView = options.decorView == null ? (ViewGroup) activity.getWindow().getDecorView() : options.decorView;
 
         // Create Header view and then add to Decor View
         mHeaderView = LayoutInflater.from(
@@ -177,17 +167,6 @@ public class PullToRefreshAttacher {
     }
 
     /**
-     * Manually set this Attacher's refreshing state. The header will be
-     * displayed or hidden as requested.
-     *
-     * @param refreshing
-     *            - Whether the attacher should be in a refreshing state,
-     */
-    final void setRefreshing(boolean refreshing) {
-        setRefreshingInt(null, refreshing, false);
-    }
-
-    /**
      * @return true if this Attacher is currently in a refreshing state.
      */
     final boolean isRefreshing() {
@@ -195,9 +174,19 @@ public class PullToRefreshAttacher {
     }
 
     /**
+     * Manually set this Attacher's refreshing state. The header will be
+     * displayed or hidden as requested.
+     *
+     * @param refreshing - Whether the attacher should be in a refreshing state,
+     */
+    final void setRefreshing(boolean refreshing) {
+        setRefreshingInt(null, refreshing, false);
+    }
+
+    /**
      * Call this when your refresh is complete and this view should reset itself
      * (header view will be hidden).
-     *
+     * <p/>
      * This is the equivalent of calling <code>setRefreshing(false)</code>.
      */
     final void setRefreshComplete() {
@@ -239,7 +228,7 @@ public class PullToRefreshAttacher {
 
     /**
      * @return The Header View which is displayed when the user is pulling, or
-     *         we are refreshing.
+     * we are refreshing.
      */
     final View getHeaderView() {
         return mHeaderView;
@@ -417,6 +406,9 @@ public class PullToRefreshAttacher {
         if (DEBUG) {
             Log.d(LOG_TAG, "onPullStarted");
         }
+        if (mOnRefreshListener != null) {
+            mOnRefreshListener.onPullStarted();
+        }
         showHeaderView();
         mPullBeginY = y;
     }
@@ -443,6 +435,9 @@ public class PullToRefreshAttacher {
     void onPullEnded() {
         if (DEBUG) {
             Log.d(LOG_TAG, "onPullEnded");
+        }
+        if (mOnRefreshListener != null) {
+            mOnRefreshListener.onPullEnded();
         }
         if (!mIsRefreshing) {
             reset(true);
@@ -526,7 +521,7 @@ public class PullToRefreshAttacher {
     /**
      * @param fromTouch Whether this is being invoked from a touch event
      * @return true if we're currently in a state where a refresh can be
-     *         started.
+     * started.
      */
     private boolean canRefresh(boolean fromTouch) {
         return !mIsRefreshing && (!fromTouch || mOnRefreshListener != null);
@@ -601,14 +596,16 @@ public class PullToRefreshAttacher {
                 WindowManager.LayoutParams.TYPE_APPLICATION_PANEL,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE |
                         WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
-                PixelFormat.TRANSLUCENT);
+                PixelFormat.TRANSLUCENT
+        );
         wlp.x = 0;
         wlp.y = mRect.top;
         wlp.gravity = Gravity.TOP;
 
         // Workaround for Issue #182
         headerView.setTag(wlp);
-        mActivity.getWindowManager().addView(headerView, wlp);
+        decorView.addView(headerView);
+        //mActivity.getWindowManager().addView(headerView, wlp);
     }
 
     protected void updateHeaderViewPosition(View headerView) {
@@ -618,13 +615,14 @@ public class PullToRefreshAttacher {
         WindowManager.LayoutParams wlp = null;
         if (headerView.getLayoutParams() instanceof WindowManager.LayoutParams) {
             wlp = (WindowManager.LayoutParams) headerView.getLayoutParams();
-        } else if (headerView.getTag() instanceof  WindowManager.LayoutParams) {
+        } else if (headerView.getTag() instanceof WindowManager.LayoutParams) {
             wlp = (WindowManager.LayoutParams) headerView.getTag();
         }
 
         if (wlp != null && wlp.y != mRect.top) {
             wlp.y = mRect.top;
-            mActivity.getWindowManager().updateViewLayout(headerView, wlp);
+            decorView.updateViewLayout(headerView,wlp);
+            //mActivity.getWindowManager().updateViewLayout(headerView, wlp);
         }
     }
 
@@ -632,16 +630,10 @@ public class PullToRefreshAttacher {
         mAddHeaderViewRunnable.finish();
 
         if (headerView.getWindowToken() != null) {
-            mActivity.getWindowManager().removeViewImmediate(headerView);
+            decorView.removeView(headerView);
+            //mActivity.getWindowManager().removeViewImmediate(headerView);
         }
     }
-
-    private final Runnable mRefreshMinimizeRunnable = new Runnable() {
-        @Override
-        public void run() {
-            minimizeHeader();
-        }
-    };
 
     private class AddHeaderViewRunnable implements Runnable {
         @Override
@@ -665,8 +657,11 @@ public class PullToRefreshAttacher {
             getDecorView().removeCallbacks(this);
         }
 
+        //private View getDecorView() {
+        //    return getAttachedActivity().getWindow().getDecorView();
+        //}
         private View getDecorView() {
-            return getAttachedActivity().getWindow().getDecorView();
+            return decorView;
         }
     }
 }

@@ -24,7 +24,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.TypedArray;
-import android.graphics.PixelFormat;
 import android.graphics.drawable.ClipDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.ShapeDrawable;
@@ -38,7 +37,6 @@ import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Interpolator;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-
 import fr.castorflex.android.smoothprogressbar.SmoothProgressBar;
 import uk.co.senab.actionbarpulltorefresh.library.sdk.Compat;
 
@@ -62,6 +60,7 @@ public class DefaultHeaderTransformer extends HeaderTransformer {
     private long mAnimationDuration;
     private int mProgressBarStyle;
     private int mProgressBarHeight = RelativeLayout.LayoutParams.WRAP_CONTENT;
+    private int mProgressBarWidth = RelativeLayout.LayoutParams.MATCH_PARENT;
 
     private final Interpolator mInterpolator = new AccelerateInterpolator();
 
@@ -80,7 +79,7 @@ public class DefaultHeaderTransformer extends HeaderTransformer {
 
         // Get ProgressBar and TextView
         mHeaderProgressBar = (SmoothProgressBar) headerView.findViewById(R.id.ptr_progress);
-        mHeaderTextView = (TextView) headerView.findViewById(R.id.ptr_text);
+        mHeaderTextView = (TextView) headerView.findViewById(R.id.mTsCenter);
         mContentLayout = (ViewGroup) headerView.findViewById(R.id.ptr_content);
 
         // Default Labels to display
@@ -122,7 +121,7 @@ public class DefaultHeaderTransformer extends HeaderTransformer {
 
         // Reset Text View
         if (mHeaderTextView != null) {
-            mHeaderTextView.setVisibility(View.VISIBLE);
+            //mHeaderTextView.setVisibility(View.VISIBLE);
             mHeaderTextView.setText(mPullRefreshLabel);
         }
 
@@ -256,6 +255,16 @@ public class DefaultHeaderTransformer extends HeaderTransformer {
     }
 
     /**
+     * Set the progress bar height.
+     */
+    public void setProgressBarWidth(int width) {
+        if (mProgressBarWidth != width) {
+            mProgressBarWidth = width;
+            applyProgressBarStyle();
+        }
+    }
+
+    /**
      * Set Text to show to prompt the user is pull (or keep pulling).
      *
      * @param pullText - Text to display.
@@ -289,26 +298,26 @@ public class DefaultHeaderTransformer extends HeaderTransformer {
         final TypedArray styleAttrs = obtainStyledAttrsFromThemeAttr(activity,
                 R.attr.ptrHeaderStyle, R.styleable.PullToRefreshHeader);
 
-        // Retrieve the Action Bar size from the app theme or the Action Bar's style
-        if (mContentLayout != null) {
-            final int height = styleAttrs.getDimensionPixelSize(
-                    R.styleable.PullToRefreshHeader_ptrHeaderHeight, getActionBarSize(activity));
-            mContentLayout.getLayoutParams().height = height;
-            mContentLayout.requestLayout();
-        }
-
-        // Retrieve the Action Bar background from the app theme or the Action Bar's style (see #93)
-        Drawable bg = styleAttrs.hasValue(R.styleable.PullToRefreshHeader_ptrHeaderBackground)
-                ? styleAttrs.getDrawable(R.styleable.PullToRefreshHeader_ptrHeaderBackground)
-                : getActionBarBackground(activity);
-        if (bg != null) {
-            mHeaderTextView.setBackgroundDrawable(bg);
-
-            // If we have an opaque background we can remove the background from the content layout
-            if (mContentLayout != null && bg.getOpacity() == PixelFormat.OPAQUE) {
-                mContentLayout.setBackgroundResource(0);
-            }
-        }
+        //// Retrieve the Action Bar size from the app theme or the Action Bar's style
+        //if (mContentLayout != null) {
+        //    final int height = styleAttrs.getDimensionPixelSize(
+        //            R.styleable.PullToRefreshHeader_ptrHeaderHeight, getActionBarSize(activity));
+        //    mContentLayout.getLayoutParams().height = height;
+        //    mContentLayout.requestLayout();
+        //}
+        //
+        //// Retrieve the Action Bar background from the app theme or the Action Bar's style (see #93)
+        //Drawable bg = styleAttrs.hasValue(R.styleable.PullToRefreshHeader_ptrHeaderBackground)
+        //        ? styleAttrs.getDrawable(R.styleable.PullToRefreshHeader_ptrHeaderBackground)
+        //        : getActionBarBackground(activity);
+        //if (bg != null) {
+        //    mHeaderTextView.setBackgroundDrawable(bg);
+        //
+        //    // If we have an opaque background we can remove the background from the content layout
+        //    if (mContentLayout != null && bg.getOpacity() == PixelFormat.OPAQUE) {
+        //        mContentLayout.setBackgroundResource(0);
+        //    }
+        //}
 
         // Retrieve the Action Bar Title Style from the app theme or the Action Bar's style
         Context abContext = headerView.getContext();
@@ -358,7 +367,7 @@ public class DefaultHeaderTransformer extends HeaderTransformer {
 
     private void applyProgressBarStyle() {
         RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(
-                RelativeLayout.LayoutParams.MATCH_PARENT, mProgressBarHeight);
+                mProgressBarWidth, mProgressBarHeight);
 
         switch (mProgressBarStyle) {
             case PROGRESS_BAR_STYLE_INSIDE:

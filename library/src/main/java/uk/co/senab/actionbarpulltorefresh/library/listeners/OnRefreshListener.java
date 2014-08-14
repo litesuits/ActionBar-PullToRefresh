@@ -29,4 +29,7 @@ public interface OnRefreshListener {
      *            - View which the user has started the refresh from.
      */
     public void onRefreshStarted(View view);
+
+    public void onPullStarted();
+    public void onPullEnded();
 }

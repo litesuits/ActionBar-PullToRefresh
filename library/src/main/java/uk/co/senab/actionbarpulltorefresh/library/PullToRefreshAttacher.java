@@ -66,6 +66,7 @@ public class PullToRefreshAttacher {
     private View mViewBeingDragged;
     private boolean mIsDestroyed = false;
     private ViewGroup decorView;
+
     protected PullToRefreshAttacher(Activity activity, Options options) {
         if (activity == null) {
             throw new IllegalArgumentException("activity cannot be null");
@@ -611,19 +612,19 @@ public class PullToRefreshAttacher {
     protected void updateHeaderViewPosition(View headerView) {
         // Refresh the Display Rect of the Decor View
         mActivity.getWindow().getDecorView().getWindowVisibleDisplayFrame(mRect);
-
-        WindowManager.LayoutParams wlp = null;
-        if (headerView.getLayoutParams() instanceof WindowManager.LayoutParams) {
-            wlp = (WindowManager.LayoutParams) headerView.getLayoutParams();
-        } else if (headerView.getTag() instanceof WindowManager.LayoutParams) {
-            wlp = (WindowManager.LayoutParams) headerView.getTag();
+        ViewGroup.LayoutParams lp = headerView.getLayoutParams();
+        if (lp instanceof WindowManager.LayoutParams) {
+            WindowManager.LayoutParams wlp = (WindowManager.LayoutParams) lp;
+            if (wlp.y != mRect.top) {
+                wlp.y = mRect.top;
+                decorView.updateViewLayout(headerView, wlp);
+            }
         }
-
-        if (wlp != null && wlp.y != mRect.top) {
-            wlp.y = mRect.top;
-            decorView.updateViewLayout(headerView,wlp);
-            //mActivity.getWindowManager().updateViewLayout(headerView, wlp);
-        }
+        //if (headerView.getLayoutParams() instanceof WindowManager.LayoutParams) {
+        //    wlp = (WindowManager.LayoutParams) headerView.getLayoutParams();
+        //} else if (headerView.getTag() instanceof WindowManager.LayoutParams) {
+        //    wlp = (WindowManager.LayoutParams) headerView.getTag();
+        //wlp = headerView.getLayoutParams();
     }
 
     protected void removeHeaderViewFromActivity(View headerView) {
